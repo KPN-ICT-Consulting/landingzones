@@ -33,9 +33,7 @@ provider "aws" {
 module "root_dns" {
 #outs: "${module.root_dns.root_zone_id}"
 	source = "./dns"
-	
-	count 				= "${var.configureDNS}"
-	
+		
 	domain 				= "${var.root_domain["domain"]}"
 	domain_identifier 	= "${var.root_domain["domain_identifier"]}"
 }
@@ -46,8 +44,6 @@ module "core" {
 #      "${module.core.orange_subnet_ids}"
 	source = "./core"
 
-	count 				= "${var.configureVPC}"
-	
 	vpc    				= "${var.vpc}"
 	sz_red 				= "${var.sz_red}"
   	sz_orange 			= "${var.sz_orange}"

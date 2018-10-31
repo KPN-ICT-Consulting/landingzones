@@ -26,7 +26,3 @@ variable "domain" {
 variable "domain_identifier" {
 	description = "DNS root domain identifier"
 }
-
-variable "count" {
-	description = "Set to 0 if the resource is skipped. Set to 1 if the resource must be created."
-}

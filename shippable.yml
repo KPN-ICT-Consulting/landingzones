@@ -91,6 +91,7 @@ build:
     - echo "==== Initialize Terraform and validate the scripts ====" &&
       terraform init &&
       terraform validate -var staging=true &&
+      terraform refresh -var staging=true &&
       terraform plan -var staging=true &&
       if [ "$BRANCH" == "development" ]; then
            echo "Dev TF plans should fail fast when there are errors in the TF config, plan or execution, therefor we run apply in CI";

@@ -42,10 +42,7 @@ module "aws" {
 	spot_pricing		= "${var.spot_pricing}"
   	
   	cloudwatch_prefix 	= "${var.cloudwatch_prefix}"
-  	
-  	configureDNS 		= "${var.configureDNS}"
-  	configureVPC 		= "${var.configureVPC}"
-  	configureECS 		= "${var.configureECS}"
+
 }
 
 terraform {

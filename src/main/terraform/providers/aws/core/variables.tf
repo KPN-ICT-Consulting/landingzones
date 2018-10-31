@@ -21,9 +21,6 @@
 # * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #*/
 
-variable "count" {
-	description = ""
-}
 variable "vpc" {
 	description = "VPC conf"
 	type = "map"

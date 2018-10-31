@@ -25,8 +25,6 @@
 # DNS CONFIGURATION
 #
 resource "aws_route53_zone" "root" {
-	count	= "${var.count}"
-	
 	name    = "${var.domain}"
 	
 	tags {

@@ -57,15 +57,6 @@ variable "cloudwatch_prefix" {
 	description = "Prefix for Cloudwatch to separate log groups"
 }
 
-variable "configureDNS" {
-	description = "set to true if DNS should be created."
-}
-variable "configureVPC" {
-	description = "set to true if NAT Gateway should be created."
-}
-variable "configureECS" {
-	description = "set to true if ECS (not Fargate) should be created."
-}
 
 #variable "isStaging" {
 #	description = "set to true if the Staging environment should be created. For Production set to false."

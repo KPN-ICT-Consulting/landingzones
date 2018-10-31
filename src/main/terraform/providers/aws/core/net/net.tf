@@ -38,19 +38,19 @@ data "aws_subnet_ids" "subnetIds" {
 
 # NAT Gateways
 resource "aws_nat_gateway" "nat_gw" {
-	count								= "${var.count ? (var.usePublicSubnetRouteTables ? var.numberOfSubnets : 0) : 0}"
+	count								= "${var.usePublicSubnetRouteTables ? var.numberOfSubnets : 0}"
 	
 	allocation_id 						= "${element(aws_eip.nat_eip.*.id, count.index)}"
 	subnet_id							= "${element(data.aws_subnet_ids.subnetIds.ids, count.index)}"
 }
 
 resource "aws_eip" "nat_eip" {
-	count								= "${var.count ? (var.usePublicSubnetRouteTables ? var.numberOfSubnets : 0) : 0}"
+	count								= "${var.usePublicSubnetRouteTables ? var.numberOfSubnets : 0}"
 	vpc									= true
 }
 # Subnets
 resource "aws_subnet" "subnet" {
-	count								= "${var.count ? var.numberOfSubnets : 0}"
+	count								= "${var.numberOfSubnets}"
 	
 	vpc_id								= "${data.aws_vpc.vpc.id}"
 	cidr_block							= "${cidrsubnet(data.aws_vpc.vpc.cidr_block, 4, (count.index + var.indexOfSubnets))}"

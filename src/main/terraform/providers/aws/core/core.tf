@@ -29,8 +29,6 @@ locals {
 module "subnet_red" {
 	source = "./net"
 	
-	count								= "${var.count}"
-	
 	vpc_id								= "${aws_vpc.vpc.id}"
 	vpc_enable_ipv6						= "${var.vpc["vpc.enable_ipv6"]}"
 	vpc_default_route_table_id 			= "${aws_vpc.vpc.default_route_table_id}"
@@ -56,8 +54,6 @@ module "subnet_red" {
 module "subnet_orange" {
 	source = "./net"
 	
-	count								= "${var.count}"
-	
 	vpc_id								= "${aws_vpc.vpc.id}"
 	vpc_enable_ipv6						= "${var.vpc["vpc.enable_ipv6"]}"
 	vpc_default_route_table_id 			= "${aws_vpc.vpc.default_route_table_id}"
@@ -82,8 +78,6 @@ module "subnet_orange" {
 
 # VPC Instance
 resource "aws_vpc" "vpc" {
-	count								= "${var.count ? 1 : 0}"
-	
 	cidr_block							= "${var.vpc["vpc.cidr"]}"
 	enable_dns_hostnames				= "${var.vpc["vpc.enable_dns_hostnames"]}"
 	enable_dns_support					= "${var.vpc["vpc.enable_dns_support"]}"
@@ -96,14 +90,10 @@ resource "aws_vpc" "vpc" {
 
 # Internet and NAT Gateways
 resource "aws_egress_only_internet_gateway" "eo_ig" {
-	count								= "${var.count ? 1 : 0}"
-	
 	vpc_id								= "${aws_vpc.vpc.id}"
 }
 
 resource "aws_internet_gateway" "default_internet_gateway" {
-	count								= "${var.count ? 1 : 0}"
-	
 	vpc_id								= "${aws_vpc.vpc.id}"
 	
 	tags {

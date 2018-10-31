@@ -128,20 +128,3 @@ variable "cloudwatch_prefix" {
 	default     = "" # To avoid cloudwatch collision or if you don't want to merge all logs to one log group specify a prefix
 }
 
-
-
-###########################################################################################
-# ENABLE / DISABLE parts of configuration
-###########################################################################################
-variable "configureDNS" {
-	description = "set to true if DNS should be created."
-	default = "true"
-}
-variable "configureVPC" {
-	description = "set to true if VPC should be created."
-	default = "true" #NOTE that only true works for now. FALSE WILL FAIL FOR NOW!!!
-}
-variable "configureECS" {
-	description = "set to true if ECS (not Fargate) should be created."
-	default = "false"
-}
