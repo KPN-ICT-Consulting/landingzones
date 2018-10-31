@@ -57,7 +57,7 @@ module "sps" {
 #      "${module.sps.sg_alb_id}"
 	source = "./sps"
 
-	vpc_id				= "${module.core.vpc_id}"
+	vpc_id				= "${module.core.vpc_id[0]}"
 	red_subnet_ids		= "${module.core.red_subnet_ids}"
 	orange_subnet_ids	= "${module.core.orange_subnet_ids}"
 	sz_red 				= "${var.sz_red}"
