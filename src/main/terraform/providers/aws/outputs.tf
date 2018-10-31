@@ -31,6 +31,15 @@ output "vpc_id" {
 	description = "The ID of the VPC as configured by TF"
 	value 		= "${module.core.vpc_id}"
 }
+output "red_subnet_ids" {
+	description = "The subnet ids from Red"
+	value = "${module.core.red_subnet_ids}"
+}
+output "orange_subnet_ids" {
+	description = "The subnet ids from Orange"
+	value = "${module.core.orange_subnet_ids}"
+}
+
 #
 # Load Balancers outputs
 #
