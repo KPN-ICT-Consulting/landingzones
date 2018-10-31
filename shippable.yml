@@ -1,0 +1,287 @@
+#/*
+# * Copyright (c) 2018 KPN
+# *
+# * Permission is hereby granted, free of charge, to any person obtaining
+# * a copy of this software and associated documentation files (the
+# * "Software"), to deal in the Software without restriction, including
+# * without limitation the rights to use, copy, modify, merge, publish,
+# * distribute, sublicense, and/or sell copies of the Software, and to
+# * permit persons to whom the Software is furnished to do so, subject to
+# * the following conditions:
+# *
+# * The above copyright notice and this permission notice shall be
+# * included in all copies or substantial portions of the Software.
+#
+# * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#*/
+
+# Language setting
+language: go
+
+# Set language version. This is only required if you use the default Shippable image for your build
+go:
+  - 1.11
+
+# use this to control what branches get built.
+# http://docs.shippable.com/ci/advancedOptions/branches/
+branches:
+  only:
+    - master
+    - development
+
+# Specify which services you need. This is only valid if you use the default Shippable image for your build
+#services:
+
+env:
+  global:
+    - TEST_RESULTS_DIR=$SHIPPABLE_REPO_DIR/shippable/testresults
+    - CODE_COVERAGE_DIR=$SHIPPABLE_REPO_DIR/shippable/codecoverage
+    - TESTS_LOC_DIR=$SHIPPABLE_REPO_DIR/src/test
+    - MOD_LOC=$SHIPPABLE_REPO_DIR/node_modules/.bin/
+
+#matrix:
+
+# The build configuration
+build:
+  # commands in this section run on your build machine and not inside your CI container.
+  pre_ci:
+    - echo "==== Prepare environment ====" &&
+      mkdir -p $TEST_RESULTS_DIR && 
+      mkdir -p $CODE_COVERAGE_DIR && 
+      pushd $TESTS_LOC_DIR &&
+      echo "==== $BRANCH branch will be executed ====";
+      if [ "$DEBUG" == "true" ]; then
+           echo "==== DEBUG List all environment variables ====";
+           printenv;
+      fi
+
+  # Probably not needed, but keep this code here until proven
+  #pre_ci_boot:
+  #  image_name: $CI_CONTAINER
+  #  image_tag: $CI_CONTAINER_VERSION
+  #  pull: true
+  #  options: '--privileged=false --net=bridge -e FOO=true -e BOO=false'
+
+  # commands in this section run inside your CI container. In addition, any commands such as ls, 
+  # in this section can be used to skip default processing for CI.
+  ci:
+    - echo "==== Prepare the initial scripts ====" &&
+      mkdir -p $SHIPPABLE_REPO_DIR/build/terraform &&
+      cp -r src/main/terraform/* $SHIPPABLE_REPO_DIR/build/terraform &&
+      cd $SHIPPABLE_REPO_DIR/build/terraform/ &&
+      echo "==== Replace region variables as set in Shippable ====";
+      if [ "$BRANCH" == "development" ]; then
+           sed -i -r "s|BRANCH_BASED_REGION|$DEV_REGION|g" main.tf;
+           sed -i -r "s|STAGING_ENV|"dev"|g" main.tf;      
+      elif [ "$BRANCH" == "master" ]; then
+           sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf;
+           sed -i -r "s|STAGING_ENV|"prod"|g" main.tf;
+      else
+           echo "==== Unsupported branch ====";
+      fi  
+    - if [ "$DEBUG" == "true" ]; then
+           more main.tf;
+      fi
+    - echo "==== Initialize Terraform and validate the scripts ====" &&
+      terraform init &&
+      terraform validate -var staging=true &&
+      terraform refresh -var staging=true &&
+      terraform plan -var staging=true &&
+      if [ "$BRANCH" == "development" ]; then
+           echo "Dev TF plans should fail fast when there are errors in the TF config, plan or execution, therefor we run apply in CI";
+           terraform apply -auto-approve -var staging=true;
+      fi
+    - echo "==== CI completed. Move to post CI ===="
+
+  post_ci:
+    - echo "==== Post CI tasks ==== ";
+      #if [ "$BRANCH" == "release-$RELEASE_TAG" ]; then
+      #     echo "==== Maybe needed ==== ";
+      #elif [ "$BRANCH" == "master" ]; then
+      #     echo "==== Maybe needed ==== ";
+      #else
+      #     echo "==== No Post CI tasks required ====";
+      #fi
+
+  #git pull-request -c -m "Request pull development branch into release-$RELEASE_TAG";
+  on_success:
+    - if [ "$BRANCH" == "development" ]; then
+           echo "==== Request a pull into master branch ====";
+           echo "==== CREATING A PULL REQUEST IS A MANUAL STEP FOR NOW ====";
+      elif [ "$BRANCH" == "master" ]; then
+           echo "==== Publish the next Release ====";   
+      else
+           echo "==== Unsupported branch $BRANCH ====";
+      fi
+
+  on_failure:
+    - echo "==== Build failed ===="
+    
+  cache: false
+
+integrations:
+# If you are using integrations, you'll need to set it up in two places. 
+# Subscription settings & here in this section of the yml.
+    notifications:
+        - integrationName: Slack
+          type: slack
+          recipients:
+            - "#LZ"
+          branches:
+            only:
+                - master
+          on_success: always
+          on_failure: always
+          on_pull_request: always
+          on_start: always
+
+    hub:
+        - integrationName: AWS-CAL
+          type: amazonkeys
+          branches:
+            only:
+              - master
+        - integrationName: AWS-CAL-DEV
+          type: amazonkeys
+          branches:
+            only:
+              - development
+
+    generic:     
+        - integrationName: LZValues
+    
+#### END CI CONFIG
+
+#### RESOURCES CONFIG (GLOBAL ACROSS SUBSCRIPTION)
+resources:
+    # Params
+    #- name: CI_CONTAINER_VERSION
+    #  type: params
+    #  versionTemplate:
+    #    params:
+    #      CI_CONTAINER_VERSION: '1.0'
+        
+    # Job resources
+    - name: scripts-from-srcRepo
+      type: gitRepo
+      integration: GitHub
+      versionTemplate:
+        sourceName: "KPN-ICT-Consulting/landingzone"
+        branch: "master"
+
+   #### INTEGRATIONS ####
+    - name: aws-LZ-Integration
+      type: integration
+      integration: AWS-CAL
+      
+    - name: LZValues
+      type: integration
+      integration: LZValues
+            
+    #### NOTIFICATIONS ####
+    - name: Slack
+      type: notification
+      integration: Slack
+      versionTemplate:
+        recipients:
+            - "#LZ"
+
+#### END RESOURCES CONFIG
+
+#### JOBS CONFIG (GLOBAL ACROSS SUBSCRIPTION)
+# ****************************************************************************************************************
+# * Build Release branch after successful merge from Development branch                                          *
+# *                    ------------- Then ------------------------------>                                        *
+# *                                   A. Create a Manifest                                                       *
+# *                                   B. setup Staging environment                                               *
+# *                                   ------------- Then ------------------------------>                         *
+# *                                                 C. Deploy Image                                              *
+# *                                                 D. Run QA tests                                              *
+# *                                                 E. Merge Release branch into Master branch                   *
+# *                                                 ------------- Then ------------------------------>           *
+# *                                                               F. Build Master branch                         *
+# *                                                               G. Publish to DockerHub after successful build *
+# ****************************************************************************************************************
+templates: &template-script
+  - echo "==== Prepare env ====" &&
+    export AWS_ACCESS_KEY_ID=$AWSINTEGRATION_INTEGRATION_ACCESSKEY &&
+    export AWS_SECRET_ACCESS_KEY=$AWSINTEGRATION_INTEGRATION_SECRETKEY
+  - if [ "$DEBUG" == "true" ]; then
+       echo "==== List env's and paths ====";
+       printenv;
+       ls -al;
+    fi
+  - echo "==== Prepare the scripts ====" &&
+    mkdir -p build/terraform &&
+    cp -r $SCRIPTSFROMSRCREPO_STATE/src/main/terraform/* build/terraform
+
+jobs:
+    # ****************************************************************************************************************
+    # * Build Release branch after successful merge from Development branch                                          *
+    # *                    ------------- Then ------------------------------>                                        *
+    # *                                   A. Create a Manifest                                                       *
+    # *                                   B. setup Staging environment                                               *
+    # ****************************************************************************************************************
+    #- name: lz_master_rSync
+    #  type: runCI
+    #  steps:
+    #    - IN: IMAGE
+    #    - IN: IMAGE_VERSION
+        
+    - name: setupLZ
+      type: runSh
+      triggerMode: parallel
+      dependencyMode: strict   # optional
+      on_start:
+        - NOTIFY: Slack
+      steps:
+        - IN: scripts-from-srcRepo
+        - IN: LZValues
+        - IN: aws-LZ-Integration
+        - TASK:
+            name: configureEnvironment
+            script:
+                  - *template-script
+                  - cd build/terraform/ &&
+                    echo "==== Replace region variables as set in Shippable ====" &&
+                    sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf &&
+                    sed -i -r "s|STAGING_ENV|"prod"|g" main.tf;
+                  - echo "==== Initialize Terraform and execute the scripts ====" &&
+                    terraform init &&
+                    terraform refresh -var staging=true &&
+                    terraform apply -auto-approve -var staging=false
+      on_failure:
+        - NOTIFY: Slack
+        
+    - name: deleteLZ
+      type: runSh
+      triggerMode: serial
+      dependencyMode: strict   # optional
+      on_start:
+        - NOTIFY: Slack
+      steps:
+        - IN: scripts-from-srcRepo
+        - IN: LZValues
+        - IN: aws-LZ-Integration
+        - IN: setupLZ
+        - TASK:
+            name: destroyLZ
+            script:
+                  - *template-script
+                  - cd build/terraform/ &&
+                    echo "==== Replace region variables as set in Shippable ====" &&
+                    sed -i -r "s|NAME_TO_SET_LZ_TFSTATE|$CLIENT_LZ_TFSTATE|g" main.tf &&
+                    sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf
+                  - echo "==== Initialize Terraform and execute the scripts ====" &&
+                    terraform init &&
+                    terraform destroy -auto-approve -var staging=false
+      on_failure:
+        - NOTIFY: Slack  
+        
+#### END JOBS CONFIG
