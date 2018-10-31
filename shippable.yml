@@ -72,9 +72,9 @@ build:
   # in this section can be used to skip default processing for CI.
   ci:
     - echo "==== Prepare the initial scripts ====" &&
-      mkdir -p build/terraform &&
-      cp -r src/main/terraform/* build/terraform &&
-      cd build/terraform/initial &&
+      mkdir -p $SHIPPABLE_REPO_DIR/build/terraform &&
+      cp -r src/main/terraform/* $SHIPPABLE_REPO_DIR/build/terraform &&
+      cd $SHIPPABLE_REPO_DIR/build/terraform/ &&
       echo "==== Replace region variables as set in Shippable ====";
       sed -i -r "s|NAME_TO_SET_LZ_TFSTATE|$CLIENT_LZ_TFSTATE|g" main.tf;
       if [ "$BRANCH" == "development" ]; then
@@ -87,35 +87,13 @@ build:
     - if [ "$DEBUG" == "true" ]; then
            more main.tf;
       fi
-    - echo "==== INITIAL - Initialize Terraform and validate the scripts ====" &&
+    - echo "==== Initialize Terraform and validate the scripts ====" &&
       terraform init &&
-      terraform validate -var 'staging=true' &&
-      terraform plan -var 'staging=true' &&
+      terraform validate -var staging=true &&
+      terraform plan -var staging=true &&
       if [ "$BRANCH" == "development" ]; then
            echo "Dev TF plans should fail fast when there are errors in the TF config, plan or execution, therefor we run apply in CI";
-           terraform apply -auto-approve -var 'staging=true';
-      fi
-    - echo "==== CI for app or other ====" &&
-      cd ~/build/terraform/app &&
-      echo "==== Replace region variables as set in Shippable ====";
-      sed -i -r "s|NAME_TO_SET_LZ_FGAPP_TFSTATE|$CLIENT_LZ_FGAPP_TFSTATE|g" main.tf;
-      if [ "$BRANCH" == "development" ]; then
-           sed -i -r "s|BRANCH_BASED_REGION|$DEV_REGION|g" main.tf;       
-      elif [ "$BRANCH" == "master" ]; then
-           sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf;
-      else
-           echo "==== Unsupported branch ====";
-      fi  
-    - if [ "$DEBUG" == "true" ]; then
-           more main.tf;
-      fi
-    - echo "==== APP - Initialize Terraform and validate the scripts ====" &&
-      terraform init &&
-      terraform validate -var 'staging=true' &&
-      terraform plan -var 'staging=true' &&
-      if [ "$BRANCH" == "development" ]; then
-           echo "Dev TF plans should fail fast when there are errors in the TF config, plan or execution, therefor we run apply in CI";
-           terraform apply -auto-approve -var 'staging=true';
+           terraform apply -auto-approve -var staging=true;
       fi
     - echo "==== CI completed. Move to post CI ===="
 
@@ -222,6 +200,18 @@ resources:
 # *                                                               F. Build Master branch                         *
 # *                                                               G. Publish to DockerHub after successful build *
 # ****************************************************************************************************************
+templates: &template-script
+  - echo "==== Prepare env ====" &&
+    export AWS_ACCESS_KEY_ID=$AWSINTEGRATION_INTEGRATION_ACCESSKEY &&
+    export AWS_SECRET_ACCESS_KEY=$AWSINTEGRATION_INTEGRATION_SECRETKEY
+  - if [ "$DEBUG" == "true" ]; then
+       echo "==== List env's and paths ====";
+       printenv;
+       ls -al;
+    fi
+  - echo "==== Prepare the scripts ====" &&
+    mkdir -p build/terraform &&
+    cp -r $SCRIPTSFROMSRCREPO_STATE/src/main/terraform/* build/terraform
 
 jobs:
     # ****************************************************************************************************************
@@ -249,24 +239,14 @@ jobs:
         - TASK:
             name: configureEnvironment
             script:
-                  - echo "==== Prepare env ====" &&
-                    export AWS_ACCESS_KEY_ID=$AWSINTEGRATION_INTEGRATION_ACCESSKEY &&
-                    export AWS_SECRET_ACCESS_KEY=$AWSINTEGRATION_INTEGRATION_SECRETKEY
-                  - if [ "$DEBUG" == "true" ]; then
-                       echo "==== List env's and paths ====";
-                       printenv;
-                       ls -al;
-                    fi
-                  - echo "==== Prepare the scripts ====" &&
-                    mkdir -p build/terraform &&
-                    cp -r $SCRIPTSFROMSRCREPO_STATE/src/main/terraform/* build/terraform &&
-                    cd build/terraform/initial &&
+                  - *template-script
+                  - cd build/terraform/ &&
                     echo "==== Replace region variables as set in Shippable ====" &&
                     sed -i -r "s|NAME_TO_SET_LZ_TFSTATE|$CLIENT_LZ_TFSTATE|g" main.tf &&
                     sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf
                   - echo "==== Initialize Terraform and execute the scripts ====" &&
                     terraform init &&
-                    terraform apply -auto-approve -var 'isStaging=false'
+                    terraform apply -auto-approve -var staging=false
       on_failure:
         - NOTIFY: Slack
         
@@ -284,99 +264,15 @@ jobs:
         - TASK:
             name: destroyLZ
             script:
-                  - echo "==== Prepare env ====" &&
-                    export AWS_ACCESS_KEY_ID=$AWSINTEGRATION_INTEGRATION_ACCESSKEY &&
-                    export AWS_SECRET_ACCESS_KEY=$AWSINTEGRATION_INTEGRATION_SECRETKEY
-                  - if [ "$DEBUG" == "true" ]; then
-                       echo "==== List env's and paths ====";
-                       printenv;
-                       ls -al;
-                    fi
-                  - echo "==== Prepare the scripts ====" &&
-                    mkdir -p build/terraform &&
-                    cp -r $SCRIPTSFROMSRCREPO_STATE/src/main/terraform/* build/terraform &&
-                    cd build/terraform/initial &&
+                  - *template-script
+                  - cd build/terraform/ &&
                     echo "==== Replace region variables as set in Shippable ====" &&
                     sed -i -r "s|NAME_TO_SET_LZ_TFSTATE|$CLIENT_LZ_TFSTATE|g" main.tf &&
                     sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf
                   - echo "==== Initialize Terraform and execute the scripts ====" &&
                     terraform init &&
-                    terraform destroy -auto-approve -var 'staging=true'
+                    terraform destroy -auto-approve -var staging=false
       on_failure:
         - NOTIFY: Slack  
-
-    ########################################################################################
-    #
-    # FARGATE
-    #
-    ########################################################################################
-    - name: deployFGApp
-      type: runSh
-      triggerMode: parallel
-      dependencyMode: strict   # optional
-      on_start:
-        - NOTIFY: Slack
-      steps:
-        - IN: scripts-from-srcRepo
-        - IN: LZValues
-        - IN: aws-LZ-Integration
-        - TASK:
-            name: publishApp
-            script:
-                  - echo "==== Prepare env ====" &&
-                    export AWS_ACCESS_KEY_ID=$AWSINTEGRATION_INTEGRATION_ACCESSKEY &&
-                    export AWS_SECRET_ACCESS_KEY=$AWSINTEGRATION_INTEGRATION_SECRETKEY
-                  - if [ "$DEBUG" == "true" ]; then
-                       echo "==== List env's and paths ====";
-                       printenv;
-                       ls -al;
-                    fi
-                  - echo "==== Prepare the scripts ====" &&
-                    mkdir -p build/terraform &&
-                    cp -r $SCRIPTSFROMSRCREPO_STATE/src/main/terraform/* build/terraform &&
-                    cd build/terraform/app &&
-                    echo "==== Replace region variables as set in Shippable ====" &&
-                    sed -i -r "s|NAME_TO_SET_LZ_FGAPP_TFSTATE|$CLIENT_LZ_FGAPP_TFSTATE|g" main.tf &&
-                    sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf
-                  - echo "==== Initialize Terraform and execute the scripts ====" &&
-                    terraform init &&
-                    terraform apply -auto-approve -var 'isStaging=false'
-      on_failure:
-        - NOTIFY: Slack
-
-    - name: undeployFGApp
-      type: runSh
-      triggerMode: serial
-      dependencyMode: strict   # optional
-      on_start:
-        - NOTIFY: Slack
-      steps:
-        - IN: scripts-from-srcRepo
-        - IN: LZValues
-        - IN: aws-LZ-Integration
-        - IN: deployFGApp
-        - TASK:
-            name: destroyFGApp
-            script:
-                  - echo "==== Prepare env ====" &&
-                    export AWS_ACCESS_KEY_ID=$AWSINTEGRATION_INTEGRATION_ACCESSKEY &&
-                    export AWS_SECRET_ACCESS_KEY=$AWSINTEGRATION_INTEGRATION_SECRETKEY
-                  - if [ "$DEBUG" == "true" ]; then
-                       echo "==== List env's and paths ====";
-                       printenv;
-                       ls -al;
-                    fi
-                  - echo "==== Prepare the scripts ====" &&
-                    mkdir -p build/terraform &&
-                    cp -r $SCRIPTSFROMSRCREPO_STATE/src/main/terraform/* build/terraform &&
-                    cd build/terraform/app &&
-                    echo "==== Replace region variables as set in Shippable ====" &&
-                    sed -i -r "s|NAME_TO_SET_LZ_FGAPP_TFSTATE|$CLIENT_LZ_FGAPP_TFSTATE|g" main.tf&& 
-                    sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf
-                  - echo "==== Initialize Terraform and execute the scripts ====" &&
-                    terraform init &&
-                    terraform destroy -auto-approve -var 'staging=true'
-      on_failure:
-        - NOTIFY: Slack
         
 #### END JOBS CONFIG
