@@ -142,8 +142,14 @@ integrations:
     hub:
         - integrationName: AWS-CAL
           type: amazonkeys
+          branches:
+            only:
+              - master
         - integrationName: AWS-CAL-DEV
           type: amazonkeys
+          branches:
+            only:
+              - development
 
     generic:     
         - integrationName: LZValues
