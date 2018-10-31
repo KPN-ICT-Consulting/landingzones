@@ -33,6 +33,6 @@ variable "ecs-clusters" {
 }
 variable "subnet_ids" {
 	description = ""
-	type = "map"
+	type = "list"
 }
 

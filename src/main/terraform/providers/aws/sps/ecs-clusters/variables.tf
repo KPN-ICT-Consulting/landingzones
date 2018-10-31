@@ -29,11 +29,11 @@ variable "vpc_id" {
 }
 variable "red_subnet_ids" {
 	description = ""
-	type = "map"
+	type = "list"
 }
 variable "orange_subnet_ids" {
 	description = ""
-	type = "map"
+	type = "list"
 }
 variable "ecs-clusters" {
 	description = ""
