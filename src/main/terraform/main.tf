@@ -51,9 +51,10 @@ module "aws" {
 terraform {
 	required_version = "> 0.7.0"
 	backend "s3" {
-		bucket = "kma-terraform"
-		key    = "terraform/NAME_TO_SET_LZ_TFSTATE"
-		region = "BRANCH_BASED_REGION"
+		bucket 			= "kma-terraform-STAGING_ENV"
+		dynamodb_table 	= "terraform-state-lock-dynamo-STAGING_ENV"
+		key    			= "terraform/lz-tfstate"
+		region 			= "BRANCH_BASED_REGION"
 	}
 }
 

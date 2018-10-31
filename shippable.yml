@@ -76,11 +76,12 @@ build:
       cp -r src/main/terraform/* $SHIPPABLE_REPO_DIR/build/terraform &&
       cd $SHIPPABLE_REPO_DIR/build/terraform/ &&
       echo "==== Replace region variables as set in Shippable ====";
-      sed -i -r "s|NAME_TO_SET_LZ_TFSTATE|$CLIENT_LZ_TFSTATE|g" main.tf;
       if [ "$BRANCH" == "development" ]; then
-           sed -i -r "s|BRANCH_BASED_REGION|$DEV_REGION|g" main.tf;       
+           sed -i -r "s|BRANCH_BASED_REGION|$DEV_REGION|g" main.tf;
+           sed -i -r "s|STAGING_ENV|"dev"|g" main.tf;      
       elif [ "$BRANCH" == "master" ]; then
            sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf;
+           sed -i -r "s|STAGING_ENV|"prod"|g" main.tf;
       else
            echo "==== Unsupported branch ====";
       fi  
@@ -248,8 +249,8 @@ jobs:
                   - *template-script
                   - cd build/terraform/ &&
                     echo "==== Replace region variables as set in Shippable ====" &&
-                    sed -i -r "s|NAME_TO_SET_LZ_TFSTATE|$CLIENT_LZ_TFSTATE|g" main.tf &&
-                    sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf
+                    sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf &&
+                    sed -i -r "s|STAGING_ENV|"prod"|g" main.tf;
                   - echo "==== Initialize Terraform and execute the scripts ====" &&
                     terraform init &&
                     terraform apply -auto-approve -var staging=false
