@@ -254,6 +254,7 @@ jobs:
                     sed -i -r "s|STAGING_ENV|"prod"|g" main.tf;
                   - echo "==== Initialize Terraform and execute the scripts ====" &&
                     terraform init &&
+                    terraform refresh -var staging=true &&
                     terraform apply -auto-approve -var staging=false
       on_failure:
         - NOTIFY: Slack
