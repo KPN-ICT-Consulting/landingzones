@@ -219,7 +219,7 @@ templates: &template-script
     fi
   - echo "==== Prepare the scripts ====" &&
     mkdir -p build/terraform &&
-    cp -r $SCRIPTSFROMSRCREPO_STATE/src/main/terraform/* build/terraform
+    cp -r $SCRIPTSFROMSRCREPO4LZ_STATE/src/main/terraform/* build/terraform
 
 jobs:
     # ****************************************************************************************************************
