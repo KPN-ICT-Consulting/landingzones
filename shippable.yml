@@ -172,7 +172,7 @@ resources:
       type: gitRepo
       integration: GitHub
       versionTemplate:
-        sourceName: "KPN-ICT-Consulting/landingzone"
+        sourceName: "KPN-ICT-Consulting/landingzones"
         branch: "master"
 
    #### INTEGRATIONS ####
