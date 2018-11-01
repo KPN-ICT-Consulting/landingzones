@@ -168,7 +168,7 @@ resources:
     #      CI_CONTAINER_VERSION: '1.0'
         
     # Job resources
-    - name: scripts-from-srcRepo
+    - name: scripts-from-srcRepo4LZ
       type: gitRepo
       integration: GitHub
       versionTemplate:
@@ -185,7 +185,7 @@ resources:
       integration: LZValues
             
     #### NOTIFICATIONS ####
-    - name: Slack
+    - name: Slack4LZ
       type: notification
       integration: Slack
       versionTemplate:
@@ -239,9 +239,9 @@ jobs:
       triggerMode: parallel
       dependencyMode: strict   # optional
       on_start:
-        - NOTIFY: Slack
+        - NOTIFY: Slack4LZ
       steps:
-        - IN: scripts-from-srcRepo
+        - IN: scripts-from-srcRepo4LZ
         - IN: LZValues
         - IN: aws-LZ-Integration
         - TASK:
@@ -257,16 +257,16 @@ jobs:
                     terraform refresh -var staging=true &&
                     terraform apply -auto-approve -var staging=false
       on_failure:
-        - NOTIFY: Slack
+        - NOTIFY: Slack4LZ
         
     - name: deleteLZ
       type: runSh
       triggerMode: serial
       dependencyMode: strict   # optional
       on_start:
-        - NOTIFY: Slack
+        - NOTIFY: Slack4LZ
       steps:
-        - IN: scripts-from-srcRepo
+        - IN: scripts-from-srcRepo4LZ
         - IN: LZValues
         - IN: aws-LZ-Integration
         - IN: setupLZ
@@ -282,6 +282,6 @@ jobs:
                     terraform init &&
                     terraform destroy -auto-approve -var staging=false
       on_failure:
-        - NOTIFY: Slack  
+        - NOTIFY: Slack4LZ
         
 #### END JOBS CONFIG
