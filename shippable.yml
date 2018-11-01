@@ -270,14 +270,15 @@ jobs:
         - IN: LZValues
         - IN: aws-LZ-Integration
         - IN: setupLZ
+          switch: off
         - TASK:
             name: destroyLZ
             script:
                   - *template-script
                   - cd build/terraform/ &&
                     echo "==== Replace region variables as set in Shippable ====" &&
-                    sed -i -r "s|NAME_TO_SET_LZ_TFSTATE|$CLIENT_LZ_TFSTATE|g" main.tf &&
-                    sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf
+                    sed -i -r "s|BRANCH_BASED_REGION|$PROD_REGION|g" main.tf &&
+                    sed -i -r "s|STAGING_ENV|"prod"|g" main.tf;
                   - echo "==== Initialize Terraform and execute the scripts ====" &&
                     terraform init &&
                     terraform destroy -auto-approve -var staging=false
