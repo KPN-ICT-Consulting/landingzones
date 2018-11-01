@@ -51,6 +51,7 @@ module "ecs_clusters" {
 	spot_pricing			= "${var.spot_pricing}"
 	
 	cloudwatch_prefix		= "${var.cloudwatch_prefix}"
-	
+
+	isStaging				= "${var.isStaging}"	
 }
 

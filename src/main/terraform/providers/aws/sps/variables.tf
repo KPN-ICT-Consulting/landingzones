@@ -68,3 +68,9 @@ variable "spot_pricing" {
 variable "cloudwatch_prefix" {
 	description = "Prefix for Cloudwatch to separate log groups"
 }
+
+variable "isStaging" {
+	description = "set to true if the Staging environment should be created. For Production set to false."
+	# Set thru commandline
+}
+

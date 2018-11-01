@@ -30,7 +30,7 @@ module "aws" {
 	source = "./providers/aws"
 	
 	region 				= "BRANCH_BASED_REGION"
-  	#isStaging			= "${var.staging}"
+  	isStaging			= "${var.staging}"
   	root_domain 		= "${var.root_domain}"
   	
   	vpc					= "${var.vpc}"

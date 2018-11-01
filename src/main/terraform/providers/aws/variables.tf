@@ -58,8 +58,8 @@ variable "cloudwatch_prefix" {
 }
 
 
-#variable "isStaging" {
-#	description = "set to true if the Staging environment should be created. For Production set to false."
+variable "isStaging" {
+	description = "set to true if the Staging environment should be created. For Production set to false."
 	# Set thru commandline
-#}
+}
 

@@ -28,7 +28,7 @@
 # Some other ECS policy examples http://docs.aws.amazon.com/AmazonECS/latest/developerguide/IAMPolicyExamples.html 
 #
 resource "aws_iam_role" "ecs_instance_role" {
-	name = "ecs_instance_role"
+	name = "${format("%s%s", "ecs_instance_role", var.isStaging ? "-dev" : "-prod")}"
 	
 	assume_role_policy = <<EOF
 {
@@ -47,7 +47,7 @@ EOF
 }
 
 resource "aws_iam_instance_profile" "ecs" {
-	name = "ecs_instance_profile"
+	name =  "${format("%s%s", "ecs_instance_profile", var.isStaging ? "-dev" : "-prod")}"
 	path = "/"
 	role = "${aws_iam_role.ecs_instance_role.name}"
 }
