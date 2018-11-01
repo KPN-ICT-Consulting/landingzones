@@ -69,6 +69,8 @@ module "sps" {
 		
 	cloudwatch_prefix	= "${var.cloudwatch_prefix}"
 	region				= "${var.region}"
+	
+	isStaging			= "${var.isStaging}"
 
 }
 #module "iam" {
