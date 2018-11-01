@@ -210,8 +210,8 @@ resources:
 # ****************************************************************************************************************
 templates: &template-script
   - echo "==== Prepare env ====" &&
-    export AWS_ACCESS_KEY_ID=$AWSINTEGRATION_INTEGRATION_ACCESSKEY &&
-    export AWS_SECRET_ACCESS_KEY=$AWSINTEGRATION_INTEGRATION_SECRETKEY
+    export AWS_ACCESS_KEY_ID=$AWSLZINTEGRATION_INTEGRATION_ACCESSKEY &&
+    export AWS_SECRET_ACCESS_KEY=$AWSLZINTEGRATION_INTEGRATION_SECRETKEY
   - if [ "$DEBUG" == "true" ]; then
        echo "==== List env's and paths ====";
        printenv;
