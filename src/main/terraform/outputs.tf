@@ -36,3 +36,10 @@ output "orange_subnet_ids" {
 	description = "The subnet ids from Orange"
 	value = "${module.aws.orange_subnet_ids}"
 }
+
+#
+# DNS outputs
+#
+output "root_zone_id" {
+	value = "${module.aws.root_zone_id}"
+}

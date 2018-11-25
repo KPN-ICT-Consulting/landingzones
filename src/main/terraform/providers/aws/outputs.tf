@@ -52,3 +52,10 @@ output "alb_name" {
 output "sg_alb_id" {
 	value = "${module.sps.sg_alb_id}"
 }
+
+#
+# DNS outputs
+#
+output "root_zone_id" {
+	value = "${module.dns.root_zone_id}"
+}
