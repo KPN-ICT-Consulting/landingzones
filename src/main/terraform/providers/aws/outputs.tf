@@ -57,5 +57,5 @@ output "sg_alb_id" {
 # DNS outputs
 #
 output "root_zone_id" {
-	value = "${module.dns.root_zone_id}"
+	value = "${module.root_dns.root_zone_id}"
 }
